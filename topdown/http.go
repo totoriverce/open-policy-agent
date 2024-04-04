@@ -229,7 +229,9 @@ func getKeyFromRequest(req ast.Object) (ast.Object, error) {
 		allHeadersTerm.Value = val
 		req.Insert(ast.StringTerm("headers"), allHeadersTerm)
 	}
-	req.Insert(ast.StringTerm("cache_ignored_headers"), ast.NullTerm())
+	if cacheIgnoredHeadersTerm != nil {
+		req.Insert(ast.StringTerm("cache_ignored_headers"), ast.NullTerm())
+	}
 	return req, nil
 }
 
