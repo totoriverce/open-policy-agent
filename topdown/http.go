@@ -68,6 +68,7 @@ var allowedKeyNames = [...]string{
 	"raise_error",
 	"caching_mode",
 	"max_retry_attempts",
+	"cache_ignored_headers",
 }
 
 // ref: https://www.rfc-editor.org/rfc/rfc7231#section-6.1
@@ -168,7 +169,11 @@ func getHTTPResponse(bctx BuiltinContext, req ast.Object) (*ast.Term, error) {
 
 	bctx.Metrics.Timer(httpSendLatencyMetricKey).Start()
 
-	reqExecutor, err := newHTTPRequestExecutor(bctx, req)
+	key, err := getKeyFromRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	reqExecutor, err := newHTTPRequestExecutor(bctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -196,6 +201,38 @@ func getHTTPResponse(bctx BuiltinContext, req ast.Object) (*ast.Term, error) {
 	bctx.Metrics.Timer(httpSendLatencyMetricKey).Stop()
 
 	return ast.NewTerm(resp), nil
+}
+
+// getKeyFromRequest returns a key to be used for caching HTTP responses
+// deletes headers from request object mentioned in cache_ignored_headers
+func getKeyFromRequest(req ast.Object) (ast.Object, error) {
+	var cacheIgnoredHeaders []string
+	var allHeaders map[string]interface{}
+	cacheIgnoredHeadersTerm := req.Get(ast.StringTerm("cache_ignored_headers"))
+	allHeadersTerm := req.Get(ast.StringTerm("headers"))
+	if cacheIgnoredHeadersTerm != nil && allHeadersTerm != nil {
+		err := ast.As(cacheIgnoredHeadersTerm.Value, &cacheIgnoredHeaders)
+		if err != nil {
+			return nil, err
+		}
+		err = ast.As(allHeadersTerm.Value, &allHeaders)
+		if err != nil {
+			return nil, err
+		}
+		for _, header := range cacheIgnoredHeaders {
+			delete(allHeaders, header)
+		}
+		val, err := ast.InterfaceToValue(allHeaders)
+		if err != nil {
+			return nil, err
+		}
+		allHeadersTerm.Value = val
+		req.Insert(ast.StringTerm("headers"), allHeadersTerm)
+	}
+	if cacheIgnoredHeadersTerm != nil {
+		req.Insert(ast.StringTerm("cache_ignored_headers"), ast.NullTerm())
+	}
+	return req, nil
 }
 
 func init() {
@@ -482,7 +519,7 @@ func createHTTPRequest(bctx BuiltinContext, obj ast.Object) (*http.Request, *htt
 		case "cache", "caching_mode",
 			"force_cache", "force_cache_duration_seconds",
 			"force_json_decode", "force_yaml_decode",
-			"raise_error", "max_retry_attempts": // no-op
+			"raise_error", "max_retry_attempts", "cache_ignored_headers": // no-op
 		default:
 			return nil, nil, fmt.Errorf("invalid parameter %q", key)
 		}
