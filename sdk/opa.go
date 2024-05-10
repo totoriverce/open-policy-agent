@@ -269,6 +269,8 @@ func (opa *OPA) Decision(ctx context.Context, options DecisionOptions) (*Decisio
 		}
 	}
 
+	dl := builtins.DecisionLabel{}
+
 	result, err := opa.executeTransaction(
 		ctx,
 		&record,
@@ -281,6 +283,7 @@ func (opa *OPA) Decision(ctx context.Context, options DecisionOptions) (*Decisio
 				queryCache:          s.queryCache,
 				interQueryCache:     s.interQueryBuiltinCache,
 				ndbcache:            ndbc,
+				decisionLabel:       dl,
 				txn:                 record.Txn,
 				now:                 record.Timestamp,
 				path:                record.Path,
@@ -514,6 +517,7 @@ type evalArgs struct {
 	path                string
 	input               interface{}
 	ndbcache            builtins.NDBCache
+	decisionLabel       builtins.DecisionLabel
 	m                   metrics.Metrics
 	strictBuiltinErrors bool
 	tracer              topdown.QueryTracer
@@ -556,6 +560,7 @@ func evaluate(ctx context.Context, args evalArgs) (interface{}, types.Provenance
 			rego.PrintHook(args.printHook),
 			rego.StrictBuiltinErrors(args.strictBuiltinErrors),
 			rego.Instrument(args.instrument),
+			rego.DecisionLabel(args.decisionLabel),
 			rego.Runtime(args.runtime)).PrepareForEval(ctx)
 		if err != nil {
 			return nil, err

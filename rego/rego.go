@@ -118,6 +118,7 @@ type EvalContext struct {
 	earlyExit              bool
 	interQueryBuiltinCache cache.InterQueryCache
 	ndBuiltinCache         builtins.NDBCache
+	decisionLabel          builtins.DecisionLabel
 	resolvers              []refResolver
 	sortSets               bool
 	copyMaps               bool
@@ -382,6 +383,7 @@ func (pq preparedQuery) newEvalContext(ctx context.Context, options []EvalOption
 		printHook:           pq.r.printHook,
 		capabilities:        pq.r.capabilities,
 		strictBuiltinErrors: pq.r.strictBuiltinErrors,
+		decisionLabel:       pq.r.decisionLabel,
 	}
 
 	for _, o := range options {
@@ -580,6 +582,7 @@ type Rego struct {
 	skipBundleVerification bool
 	interQueryBuiltinCache cache.InterQueryCache
 	ndBuiltinCache         builtins.NDBCache
+	decisionLabel          builtins.DecisionLabel
 	strictBuiltinErrors    bool
 	builtinErrorList       *[]topdown.Error
 	resolvers              []refResolver
@@ -1109,6 +1112,13 @@ func InterQueryBuiltinCache(c cache.InterQueryCache) func(r *Rego) {
 func NDBuiltinCache(c builtins.NDBCache) func(r *Rego) {
 	return func(r *Rego) {
 		r.ndBuiltinCache = c
+	}
+}
+
+// DecisionLabel sets the Policy result data.
+func DecisionLabel(dl builtins.DecisionLabel) func(r *Rego) {
+	return func(r *Rego) {
+		r.decisionLabel = dl
 	}
 }
 
@@ -2101,7 +2111,8 @@ func (r *Rego) eval(ctx context.Context, ectx *EvalContext) (ResultSet, error) {
 		WithBuiltinErrorList(r.builtinErrorList).
 		WithSeed(ectx.seed).
 		WithPrintHook(ectx.printHook).
-		WithDistributedTracingOpts(r.distributedTacingOpts)
+		WithDistributedTracingOpts(r.distributedTacingOpts).
+		WithDecisionLabel(r.decisionLabel)
 
 	if !ectx.time.IsZero() {
 		q = q.WithTime(ectx.time)

@@ -89,6 +89,7 @@ type eval struct {
 	builtins               map[string]*Builtin
 	builtinCache           builtins.Cache
 	ndBuiltinCache         builtins.NDBCache
+	decisionLabel          builtins.DecisionLabel
 	functionMocks          *functionMocksStack
 	virtualCache           *virtualCache
 	comprehensionCache     *comprehensionCache
@@ -821,6 +822,7 @@ func (e *eval) evalCall(terms []*ast.Term, iter unifyIterator) error {
 		Cache:                  e.builtinCache,
 		InterQueryBuiltinCache: e.interQueryBuiltinCache,
 		NDBuiltinCache:         e.ndBuiltinCache,
+		DecisionLabel:          e.decisionLabel,
 		Location:               e.query[e.index].Location,
 		QueryTracers:           e.tracers,
 		TraceEnabled:           e.traceEnabled,

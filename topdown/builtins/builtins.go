@@ -109,6 +109,20 @@ func (c *NDBCache) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// DecisionLabel contains the Policy result data. The expected
+// inputs will be Strings, with the value representing a JSON
+// message body.
+type DecisionLabel map[ast.String]ast.String
+
+func (dl DecisionLabel) Add(k ast.String, v ast.String) {
+	dl[k] = v
+} // end Add function
+
+func (dl DecisionLabel) Get(k ast.String) (ast.String, bool) {
+	v, ok := dl[k]
+	return v, ok
+} // end Get function
+
 // ErrOperand represents an invalid operand has been passed to a built-in
 // function. Built-ins should return ErrOperand to indicate a type error has
 // occurred.

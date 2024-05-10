@@ -49,6 +49,9 @@
       "crypto.x509.parse_keypair",
       "crypto.x509.parse_rsa_private_key"
     ],
+    "decision": [
+      "decision.label.add"
+    ],
     "encoding": [
       "base64.decode",
       "base64.encode",
@@ -4908,6 +4911,30 @@
     "result": {
       "description": "JWK as an object",
       "name": "output",
+      "type": "object[string: any]"
+    },
+    "wasm": false
+  },
+  "decision.label.add": {
+    "args": [
+      {
+        "description": "string label of the tag",
+        "name": "label",
+        "type": "string"
+      },
+      {
+        "description": "string value of the tag",
+        "name": "value",
+        "type": "any"
+      }
+    ],
+    "available": [
+      "edge"
+    ],
+    "description": "adds Policy results to the Decision Label Property",
+    "introduced": "edge",
+    "result": {
+      "name": "labels",
       "type": "object[string: any]"
     },
     "wasm": false
